@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "লেড সঞ্চয়ী ব্যাটারির অভ্যন্তরীণ রোধ কত ওম (Ohm)?",
+          options: {
+            A: "0.02",
+            B: "0.50",
+            C: "0.80",
+            D: "0.001",
+          },
+          correct: "D",
+          explanation:
+            "<p>লেড সঞ্চয়ী ব্যাটারির (Lead-acid battery) অভ্যন্তরীণ রোধ অত্যন্ত কম রাখা হয় যাতে এটি উচ্চ মানের বিদ্যুৎ প্রবাহ সরবরাহ করতে পারে। সাধারণত, এর অভ্যন্তরীণ রোধ <strong>0.001 ওম (Ohm)</strong> এর কাছাকাছি বা এর থেকে কম হয়।</p>",
+        },
+        {
+          id: 2,
+          question:
+            "স্টোরেজ ব্যাটারির মাধ্যমে কোন ভারী ধাতুটি খাদ্য-শৃঙ্খলে প্রবেশ করে?",
+          options: {
+            A: "Cd",
+            B: "As",
+            C: "Pb",
+            D: "Cr",
+          },
+          correct: "C",
+          explanation:
+            "<p>স্টোরেজ ব্যাটারি, বিশেষ করে লেড-অ্যাসিড ব্যাটারি, এর প্রধান উপাদান হলো <strong>সীসা (Pb)</strong>। এই ব্যাটারিগুলো যখন সঠিকভাবে নিষ্পত্তি করা হয় না, তখন সীসা পরিবেশে মুক্ত হতে পারে এবং খাদ্য-শৃঙ্খলে প্রবেশ করে মানব স্বাস্থ্য ও পরিবেশের জন্য মারাত্মক হুমকি সৃষ্টি করতে পারে।</p>",
+        },
+        {
+          id: 3,
+          question: "হার্ট পেসমেকার রূপে কোনটি ব্যবহৃত হয়?",
+          options: {
+            A: "লিথিয়াম ব্যাটারি",
+            B: "লিথিয়াম আয়ন ব্যাটারি",
+            C: "লিথিয়াম SVO ব্যাটারি",
+            D: "H₂ ফুয়েল সেল",
+          },
+          correct: "C",
+          explanation:
+            "<p>হার্ট পেসমেকারের মতো চিকিৎসা যন্ত্রে দীর্ঘস্থায়ী, নির্ভরযোগ্য এবং ছোট আকারের শক্তির উৎস প্রয়োজন। এই ধরনের যন্ত্রে প্রায়শই <strong>লিথিয়াম সিলভার ভ্যানাডিয়াম অক্সাইড (Li-SVO) ব্যাটারি</strong> ব্যবহৃত হয়, কারণ এগুলোর উচ্চ শক্তি ঘনত্ব এবং দীর্ঘ আয়ুষ্কাল রয়েছে।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "লেড সঞ্চয়ী কোষে কোনটি তড়িৎ বিশ্লেষ্য হিসেবে ব্যবহৃত হয়?",
+          options: {
+            A: "H₂SO₄",
+            B: "PbSO₄",
+            C: "PbO",
+            D: "PbO₂",
+          },
+          correct: "A",
+          explanation:
+            "<p>লেড সঞ্চয়ী কোষে (Lead-acid battery) প্রধান তড়িৎ বিশ্লেষ্য হিসেবে <strong>সালফিউরিক অ্যাসিডের (H₂SO₄)</strong> জলীয় দ্রবণ ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 5,
+          question: "লেড সঞ্চয়ী কোষে ব্যবহৃত H₂SO₄ এর আপেক্ষিক গুরুত্ব কত?",
+          options: {
+            A: "1.25",
+            B: "1.20",
+            C: "1.15",
+            D: "1.10",
+          },
+          correct: "A",
+          explanation:
+            "<p>একটি সম্পূর্ণ চার্জিত লেড সঞ্চয়ী কোষে ব্যবহৃত H₂SO₄ দ্রবণের আপেক্ষিক গুরুত্ব সাধারণত <strong>1.25 থেকে 1.28</strong> এর মধ্যে থাকে। বিকল্পগুলোর মধ্যে, <strong>1.25</strong> সবচেয়ে সঠিক।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "মোটর গাড়িতে ব্যবহৃত লেড সঞ্চায়ক কোষে মাঝে মাঝে পানি দেওয়া হয় কেন?",
+          options: {
+            A: "কোষ শীতল রাখার জন্য",
+            B: "দ্রবণের pH সঠিক রাখার জন্য",
+            C: "কোষের কার্যক্ষমতা ঠিক রাখতে",
+            D: "H₂SO₄ এর আপেক্ষিক গুরুত্ব সঠিক রাখতে",
+          },
+          correct: "D",
+          explanation:
+            "<p>লেড সঞ্চায়ক কোষে চার্জিং প্রক্রিয়ার সময় পানি তড়িৎ বিশ্লেষিত হয়ে হাইড্রোজেন ও অক্সিজেন গ্যাসে পরিণত হয়, ফলে পানির স্তর কমে যায়। এতে H₂SO₄ দ্রবণের ঘনত্ব বা আপেক্ষিক গুরুত্ব বেড়ে যায়। কোষের সঠিক কার্যকারিতার জন্য নির্দিষ্ট আপেক্ষিক গুরুত্ব বজায় রাখা জরুরি। তাই, <strong>H₂SO₄ এর আপেক্ষিক গুরুত্ব সঠিক রাখতে</strong> মাঝে মাঝে বিশুদ্ধ পানি যোগ করা হয়।</p>",
+        },
+        {
+          id: 7,
+          question: "কোনটি লেড স্টোরেজ ব্যাটারির সংকেত বা কোষ ডায়াগ্রাম?",
+          options: {
+            A: "Pb / Pb²⁺ || Cu²⁺ / Cu",
+            B: "Pb, PbSO₄ / H₂SO₄(aq) / PbO₂, Pb",
+            C: "Zn / Zn²⁺ || Pb²⁺ / Pb",
+            D: "Pb / Pb²⁺ || H⁺ / H₂",
+          },
+          correct: "B",
+          explanation:
+            "<p>লেড স্টোরেজ ব্যাটারির একটি একক কোষের গঠন সাধারণত অ্যানোড, তড়িৎ বিশ্লেষ্য এবং ক্যাথোড দিয়ে প্রকাশ করা হয়।<br>অ্যানোড: সীসা (Pb) এবং সীসা সালফেট (PbSO₄)<br>তড়িৎ বিশ্লেষ্য: সালফিউরিক অ্যাসিড (H₂SO₄)<br>ক্যাথোড: লেড ডাইঅক্সাইড (PbO₂) এবং সীসা (Pb) প্লেট<br>সুতরাং, সঠিক কোষ ডায়াগ্রাম হলো: <strong>Pb, PbSO₄ / H₂SO₄(aq) / PbO₂, Pb</strong>।</p>",
+        },
+        {
+          id: 8,
+          question: "কোনটি রিচার্জ করা যায়?",
+          options: {
+            A: "শুষ্ক কোষ / Dry cell",
+            B: "ক্ষারীয় ফুয়েল সেল / ক্ষারীয় কোষ (Alkali cell)",
+            C: "লিথিয়াম ব্যাটারি / Lithium battery",
+            D: "লিথিয়াম-আয়ন ব্যাটারি / Lithium ion battery",
+          },
+          correct: "D",
+          explanation:
+            "<p>রিচার্জেবল কোষ হলো এমন কোষ যা পুনরায় চার্জ করে ব্যবহার করা যায়।<br>শুষ্ক কোষ (Dry cell) এবং লিথিয়াম ব্যাটারি (একক-ব্যবহারের লিথিয়াম মেটাল ব্যাটারি) সাধারণত রিচার্জ করা যায় না।<br>ক্ষারীয় ফুয়েল সেল রাসায়নিক পদার্থ যোগানের মাধ্যমে চলে, রিচার্জ করা হয় না।<br><strong>লিথিয়াম-আয়ন ব্যাটারি</strong> হলো একটি সাধারণ রিচার্জেবল ব্যাটারি যা মোবাইল ফোন, ল্যাপটপ এবং বৈদ্যুতিক গাড়িতে ব্যাপকভাবে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 9,
+          question: "লেড স্টোরেজ সেলে কোনটি বিজারিত হয়?",
+          options: {
+            A: "Pb",
+            B: "PbO",
+            C: "PbSO₄",
+            D: "PbO₂",
+          },
+          correct: "D",
+          explanation:
+            "<p>লেড স্টোরেজ সেলে ডিসচার্জ হওয়ার সময় ক্যাথোডে <strong>লেড ডাইঅক্সাইড (PbO₂)</strong> বিজারিত হয়। বিক্রিয়াটি হলো: PbO₂(s) + SO₄²⁻(aq) + 4H⁺(aq) + 2e⁻ → PbSO₄(s) + 2H₂O(l)।</p>",
+        },
+        {
+          id: 10,
+          question: "LiCoO₂ = 'A' + xLi⁺ + xe⁻; 'A' যৌগে Co এর জারণ মান কত?",
+          options: {
+            A: "+4",
+            B: "+3",
+            C: "+2",
+            D: "+1",
+          },
+          correct: "A",
+          explanation:
+            "<p>প্রদত্ত বিক্রিয়াটি LiCoO<sub>2</sub> এর চার্জিং প্রক্রিয়াকে নির্দেশ করে, যেখানে লিথিয়াম আয়ন (Li<sup>+</sup>) কোবাল্ট অক্সাইড থেকে বেরিয়ে আসে।<br>প্রাথমিকভাবে LiCoO<sub>2</sub> তে, Li এর জারণ মান +1 এবং O এর জারণ মান -2।<br>ধরি, Co এর জারণ মান y। তাহলে, (+1) + y + 2(-2) = 0 ⇒ 1 + y - 4 = 0 ⇒ y = +3।<br>সুতরাং, LiCoO<sub>2</sub> তে Co এর জারণ মান +3।</p><p>যখন LiCoO<sub>2</sub> থেকে xLi<sup>+</sup> এবং xe<sup>-</sup> বের হয়ে 'A' যৌগ তৈরি হয়, তখন 'A' যৌগটি Li<sub>1-x</sub>CoO<sub>2</sub> হয়।<br>এই 'A' যৌগে কোবাল্টের জারণ মান বাড়বে কারণ এটি ইলেকট্রন ত্যাগ করেছে। যখন ব্যাটারি সম্পূর্ণরূপে চার্জ হয় (অর্থাৎ, প্রায় সমস্ত লিথিয়াম আয়ন বেরিয়ে আসে), তখন Co এর জারণ মান সর্বোচ্চ হয়।<br>যদি x=1 হয় (অর্থাৎ, সব লিথিয়াম বের হয়ে যায়), তাহলে যৌগটি CoO<sub>2</sub> হয়। এই CoO<sub>2</sub> এ কোবাল্টের জারণ মান হবে +4 (কারণ O এর জারণ মান -2, এবং 2(-2) + Co = 0 ⇒ Co = +4)।<br>সুতরাং, 'A' যৌগে (সম্পূর্ণ চার্জিত অবস্থায়) Co এর জারণ মান <strong>+4</strong>।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "লিথিয়াম আয়ন ব্যাটারিতে অ্যানোড হিসেবে কোনটি ব্যবহৃত হয়?",
+          options: {
+            A: "লিথিয়াম",
+            B: "কার্বন",
+            C: "ধাতব অক্সাইড",
+            D: "প্লাটিনাম",
+          },
+          correct: "B",
+          explanation:
+            "<p>লিথিয়াম আয়ন ব্যাটারিতে অ্যানোড হিসেবে সাধারণত <strong>গ্রাফাইট (এক ধরনের কার্বন)</strong> ব্যবহৃত হয়। লিথিয়াম আয়নগুলো চার্জিংয়ের সময় গ্রাফাইটের স্তরের মধ্যে প্রবেশ করে (intercalation)। ধাতব লিথিয়াম (A) ব্যবহৃত হয় না কারণ এটি ডেনড্রাইট তৈরি করে যা ব্যাটারির শর্ট সার্কিট এবং নিরাপত্তা ঝুঁকির কারণ হতে পারে।</p>",
+        },
+        {
+          id: 12,
+          question: "PbO₂ কে দ্রবীভূত করতে নিচের কোনটি ব্যবহার করা যাবে?",
+          options: {
+            A: "HCl",
+            B: "H₂SO₄",
+            C: "HNO₃",
+            D: "H₂O",
+          },
+          correct: "B",
+          explanation:
+            "<p>লেড ডাইঅক্সাইড (PbO₂) সাধারণত শক্তিশালী অ্যাসিডে দ্রবীভূত হয়। লেড সঞ্চয়ী ব্যাটারির ডিসচার্জিং প্রক্রিয়ার সময়, PbO₂ সালফিউরিক অ্যাসিড (H₂SO₄) এর সাথে বিক্রিয়া করে লেড সালফেট (PbSO₄) তৈরি করে।<br>PbO₂(s) + SO₄²⁻(aq) + 4H⁺(aq) + 2e⁻ → PbSO₄(s) + 2H₂O(l)<br>অথবা সম্পূর্ণ বিক্রিয়া: PbO₂ + H₂SO₄ + 2H⁺ + 2e⁻ → PbSO₄ + 2H₂O<br>সুতরাং, <strong>H₂SO₄</strong> PbO₂ কে দ্রবীভূত করতে (বিক্রিয়া ঘটাতে) ব্যবহৃত হয়। অন্যান্য অ্যাসিড যেমন HCl বা HNO₃ ব্যবহার করলে বিভিন্ন জটিল বিক্রিয়া ঘটতে পারে বা অন্য পণ্য তৈরি হতে পারে।</p>",
+        },
+        {
+          id: 13,
+          question: "কোনটি রিচার্জেবল কোষ নয়?",
+          options: {
+            A: "লিথিয়াম ব্যাটারি",
+            B: "লিথিয়াম আয়ন ব্যাটারি",
+            C: "লেড অ্যাসিড ব্যাটারি",
+            D: "কোনোটিই নয়",
+          },
+          correct: "A",
+          explanation:
+            "<p><strong>লিথিয়াম ব্যাটারি</strong> (যা সাধারণত লিথিয়াম মেটাল ব্যাটারি নামে পরিচিত এবং যেখানে ধাতব লিথিয়াম অ্যানোড হিসেবে ব্যবহৃত হয়) সাধারণত একবার ব্যবহারযোগ্য (non-rechargeable)। এর বিপরীতে, লিথিয়াম-আয়ন ব্যাটারি এবং লেড অ্যাসিড ব্যাটারি উভয়ই রিচার্জেবল।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "লিথিয়াম ব্যাটারি চার্জের সময় কোবাল্ট এর জারণ মান 3+ হলে কত হয়?",
+          options: {
+            A: "+1",
+            B: "+2",
+            C: "+4",
+            D: "+6",
+          },
+          correct: "C",
+          explanation:
+            "<p>প্রশ্নটি কিছুটা অস্পষ্ট কারণ 'লিথিয়াম ব্যাটারি' বলতে লিথিয়াম মেটাল ব্যাটারি বা লিথিয়াম আয়ন ব্যাটারি উভয়কেই বোঝাতে পারে। তবে, যদি LiCoO₂ ক্যাথোডযুক্ত লিথিয়াম আয়ন ব্যাটারির চার্জিং প্রক্রিয়ার কথা বলা হয়: <br>চার্জিংয়ের সময়, LiCoO₂ থেকে লিথিয়াম আয়ন (Li⁺) বেরিয়ে আসে এবং কোবাল্ট (Co) এর জারণ মান বৃদ্ধি পায়।<br>যদি LiCoO₂ এ Co এর জারণ মান +3 হয় (Li⁺Co³⁺O₂⁻²), তাহলে চার্জিংয়ের সময় Li⁺ বের হয়ে গেলে কোবাল্ট ইলেকট্রন হারায়, ফলে এর জারণ মান বৃদ্ধি পায়।<br>যখন ব্যাটারি সম্পূর্ণ চার্জ হয়, তখন লিথিয়াম আয়নগুলো অ্যানোডের দিকে চলে যায়, এবং ক্যাথোড উপাদানটি প্রায় Li₀.₅CoO₂ থেকে Li₀CoO₂ (অর্থাৎ CoO₂) এ পরিবর্তিত হয়।<br>CoO₂ তে, Co এর জারণ মান গণনা করলে: Co + 2(-2) = 0 ⇒ Co = +4<br>সুতরাং, লিথিয়াম আয়ন ব্যাটারি চার্জের সময় Co এর জারণ মান 3+ থেকে বৃদ্ধি পেয়ে <strong>+4</strong> হয়।</p>",
+        },
+        {
+          id: 15,
+          question: "অটোমোবাইলে কোনটি ব্যবহৃত হয়?",
+          options: {
+            A: "লিথিয়াম ব্যাটারি",
+            B: "লিথিয়াম আয়ন ব্যাটারি",
+            C: "লেড স্টোরেজ ব্যাটারি",
+            D: "সোলার সেল",
+          },
+          correct: "C",
+          explanation:
+            "<p>ঐতিহ্যগতভাবে এবং বর্তমানেও বেশিরভাগ গ্যাসোলিন চালিত অটোমোবাইল এবং কিছু হাইব্রিড গাড়িতে স্টার্টার ব্যাটারি হিসেবে <strong>লেড স্টোরেজ ব্যাটারি (Lead-acid battery)</strong> ব্যবহৃত হয়। লিথিয়াম আয়ন ব্যাটারি যদিও আধুনিক বৈদ্যুতিক গাড়িতে ব্যবহৃত হয়, কিন্তু 'অটোমোবাইল' বলতে সাধারণত সাধারণ অভ্যন্তরীণ দহন ইঞ্জিনের গাড়িকেই বোঝানো হয়।</p>",
+        },
+        {
+          id: 16,
+          question: "লেড স্টোরেজ ব্যাটারি থেকে কোন গ্যাস নির্গত হয়?",
+          options: {
+            A: "O₂",
+            B: "H₂",
+            C: "N₂",
+            D: "Cl₂",
+          },
+          correct: "B",
+          explanation:
+            "<p>লেড স্টোরেজ ব্যাটারি চার্জ করার সময় বা অতিরিক্ত চার্জ করার সময়, তড়িৎ বিশ্লেষ্য (H₂SO₄) এর পানি তড়িৎ বিশ্লেষিত হয়ে হাইড্রোজেন (H₂) এবং অক্সিজেন (O₂) গ্যাস উৎপন্ন করে। এর মধ্যে <strong>হাইড্রোজেন (H₂)</strong> গ্যাস নির্গত হয়।</p>",
+        },
+        {
+          id: 17,
+          question: "লেড সঞ্চয়ী কোষের চক্রজীবন কত?",
+          options: {
+            A: "100-200",
+            B: "200-300",
+            C: "300-500",
+            D: "400-500",
+          },
+          correct: "C",
+          explanation:
+            "<p>লেড সঞ্চয়ী কোষের (Lead-acid battery) চক্রজীবন (cycle life) হলো এটি কতবার সম্পূর্ণভাবে চার্জ এবং ডিসচার্জ করা যেতে পারে। সাধারণত, একটি লেড সঞ্চয়ী কোষের চক্রজীবন প্রায় <strong>300-500</strong> চক্রের মধ্যে থাকে, যদিও এটি ব্যাটারির ধরন, ব্যবহার এবং রক্ষণাবেক্ষণের উপর নির্ভর করে পরিবর্তিত হতে পারে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                      <label class="option" data-option="${option}">
+                                                                        <div class="circle">${option}</div>
+                                                                        <span class="option-text">${question.options[option]}</span>
+                                                                      </label>
+                                                                    `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                         <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                         <div class="explanation-content">
+                                                                           <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                           ${question.explanation}
+                                                                         </div>
+                                                                       </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                    <p class="question-label">${
+                                                                      index + 1
+                                                                    }. ${
+            question.question
+          }</p>
+                                                                    <div class="options">
+                                                                      ${optionsHTML}
+                                                                    </div>
+                                                                    ${explanationHTML}
+                                                                  `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
